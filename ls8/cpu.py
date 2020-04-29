@@ -1,6 +1,7 @@
 """CPU functionality."""
 
 import sys
+from pathlib import Path
 
 class CPU:
     """Main CPU class."""
@@ -27,19 +28,29 @@ class CPU:
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI
-            0b00000000, # REG 0 identifier
-            0b00001000, # 8 value
-            0b01000111, # PRN
-            0b00000000, # REG 0 identifier
-            0b00000001, # HLT
-        ]
+        program = []
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        if len(sys.argv) != 2:
+            print("File parameters for %s not met" % (sys.argv[0]))
+            sys.exit(2)
+
+        try:
+            path = Path(f"examples/{sys.argv[1]}")
+            with open(path) as file:
+                for line in file:
+                    if line[0] == '#' or line == '' or line == '\n':
+                        continue
+                    line = line.split()
+                    # add binary literal from binary string to program
+                    bin_lit = int(line[0], 2)
+                    program.append(bin_lit)
+
+            for instruction in program:
+                self.ram[address] = instruction
+                address += 1
+        except FileNotFoundError:
+            print("%s not found" % (sys.argv[1]))
+
 
 
     def alu(self, op, reg_a, reg_b):
