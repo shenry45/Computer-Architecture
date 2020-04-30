@@ -130,8 +130,16 @@ class CPU:
             self.ir['PC'] += 3
         elif op == 'MOD':
             pass
-        elif op == 'MUL':
-            pass
+        elif op == 0b10100010:
+            ''' MUL '''
+            reg_a_val = self.ram[reg_a]
+            reg_b_val = self.ram[reg_b]
+
+            multiply_val = reg_a_val * reg_b_val
+
+            self.ram_write(reg_a, multiply_val)
+
+            self.ir['PC'] += 3
         elif op == 'NOP':
             pass
         elif op == 'NOT':
