@@ -48,6 +48,7 @@ class CPU:
             for instruction in program:
                 self.ram[address] = instruction
                 address += 1
+
         except FileNotFoundError:
             print("%s not found" % (sys.argv[1]))
 
@@ -86,18 +87,15 @@ class CPU:
         elif op == 'DEC':
             setattr(self.reg[reg_a], reg_a - 1)
         elif op == 'DIV':
-            reg_a = getattr(self.ram[reg_a])
-            reg_b = getattr(self.reg[reg_b])
-            if reg_b == 0:
-                # TODO Halt
-                print('Error on operation: DIV')
+            pass
         elif op == 0b00000001:
             '''HLT'''
             exit()
         elif op == 'INC':
-            setattr(self.reg[reg_a], reg_a + 1)
+            reg_val = self.reg
+            self.ram_write(reg_a, )
         elif op == 'INT':
-            setattr(self.reg[7], reg_a)
+            pass
         elif op == 'IRET':
             pass
         elif op == 'JEQ':
@@ -118,22 +116,14 @@ class CPU:
             pass
         elif op == 0b10000010:
             '''LDI'''
-            # get reg address to write to
-            reg_addr = self.ir['PC'] + 1
-            reg_val = self.ram[reg_addr]
-            # get int addr for reg write
-            int_addr = self.ir['PC'] + 2
-            integer_val = self.ram[int_addr]
-            # set reg addr to int value
-            self.ram_write(reg_val, integer_val)
-            
+            self.reg[reg_a] = reg_b            
             self.ir['PC'] += 3
         elif op == 'MOD':
             pass
         elif op == 0b10100010:
             ''' MUL '''
-            reg_a_val = self.ram[reg_a]
-            reg_b_val = self.ram[reg_b]
+            reg_a_val = self.reg[reg_a]
+            reg_b_val = self.reg[reg_b]
 
             multiply_val = reg_a_val * reg_b_val
 
@@ -146,39 +136,47 @@ class CPU:
             pass
         elif op == 'OR':
             pass
-        elif op == 'POP':
-            pass
+        elif op == 0b01000110:
+            ''' POP '''
+            sp_val = self.reg[7]
+            self.reg[reg_a] = sp_val
+
+            self.reg[7] += 1
+            self.ir['PC'] += 2
         elif op == 'PRA':
             pass
         elif op == 0b01000111:
             '''PRN'''
             print(self.reg[reg_a])
             self.ir['PC'] += 2
-
-        elif op == 'PUSH':
+        elif op == 0b01000101:
+            ''' PUSH '''
             # change SP
             self.reg[7] -= 1
             # copy value from register into memory
-            reg_num = self.ram[self.ir['PC'] + 1]
-            value = self.ram[reg_num + 1]
+            reg_val = self.reg[reg_a]
 
             address = self.reg[7]
-            self.ram[address] = value
+            self.ram[address] = reg_val
 
-            pc += 2
-            
+            self.ir['PC'] += 2     
         elif op == 'RET':
             pass
         elif op == 'SHL':
-            setattr(self.reg[reg_a], reg_a << reg_b)
+            pass
+            # setattr(self.reg[reg_a], reg_a << reg_b)
         elif op == 'SHR':
-            setattr(self.reg[reg_a], reg_a >> reg_b)
+            pass
+            # setattr(self.reg[reg_a], reg_a >> reg_b)
         elif op == 'ST':
-            setattr(self.reg[reg_b], reg_a)
+            pass
+            # setattr(self.reg[reg_b], reg_a)
         elif op == 'SUB':
-            setattr(self.reg[reg_a], reg_a - reg_b)
+            pass
+            # setattr(self.reg[reg_a], reg_a - reg_b)
         elif op == 'XOR':
-            setattr(self.reg[reg_a], reg_a ^ reg_b)
+            pass
+            # setattr(self.reg[reg_a], reg_a ^ reg_b)
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -199,8 +197,6 @@ class CPU:
 
         for i in range(8):
             print(" %02X" % self.reg[i], end='')
-
-        print()
 
     def ram_read(self, reg):
         return self.ram[reg]
