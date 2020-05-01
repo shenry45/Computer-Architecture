@@ -57,18 +57,21 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
-            reg_a = getattr(self.ram[reg_a])
-            reg_b = getattr(self.reg[reg_b])
-            setattr(self.reg[reg_a], reg_a + reg_b)
+        if op == 0b10100000:
+            ''' ADD '''
+            reg_a_val = self.reg[reg_a]
+            reg_b_val = self.reg[reg_b]
+            self.reg[reg_a] = reg_a_val + reg_b_val
+            self.ir['PC'] += 3
         elif op == "AND":
-            reg_a = getattr(self.ram[reg_a])
-            reg_b = getattr(self.reg[reg_b])
-            setattr(self.reg[reg_a], reg_a & reg_b)
-        elif op == "CALL":
-            # TODO: Push address to top of stack
-            # reverse counter after?
             pass
+        elif op == 0b01010000:
+            ''' CALL '''
+            # pushes next command address stack
+            self.reg[7] -= 1
+            self.ram[self.reg[7]] = self.ir['PC'] + 2
+            # takes in register to move PC to
+            self.ir['PC'] = self.reg[reg_a]
         elif op == "CMP":
             if reg_a == reg_b:
                 setattr(self.fl['E'], 1)
@@ -160,8 +163,13 @@ class CPU:
             self.ram[address] = reg_val
 
             self.ir['PC'] += 2     
-        elif op == 'RET':
-            pass
+        elif op == 0b00010001:
+            ''' RET '''
+            # update PC
+            self.ir['PC'] = self.ram[self.reg[7]]
+            # reduce stack
+            self.reg[7] += 1
+
         elif op == 'SHL':
             pass
             # setattr(self.reg[reg_a], reg_a << reg_b)
