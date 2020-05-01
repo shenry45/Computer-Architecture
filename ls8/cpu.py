@@ -116,7 +116,7 @@ class CPU:
             pass
         elif op == 0b10000010:
             '''LDI'''
-            self.reg[reg_a] = reg_b            
+            self.reg[reg_a] = reg_b
             self.ir['PC'] += 3
         elif op == 'MOD':
             pass
@@ -138,7 +138,7 @@ class CPU:
             pass
         elif op == 0b01000110:
             ''' POP '''
-            sp_val = self.reg[7]
+            sp_val = self.ram[self.reg[7]]
             self.reg[reg_a] = sp_val
 
             self.reg[7] += 1
