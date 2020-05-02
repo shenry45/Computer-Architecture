@@ -24,7 +24,11 @@ class CPU:
             0b01000101: "PUSH",
             0b01000110: "POP",
             0b01000111: "PRN",
-            0b00000001: "HLT"
+            0b00000001: "HLT",
+            0b10100111: "CMP",
+            0b01010101: "JEQ",
+            0b01010100: "JMP",
+            0b01010110: "JNE"
         }
         self.branchtable = {
             "HLT": self.hlt,
@@ -33,7 +37,10 @@ class CPU:
             "RET": self.ret,
             "PUSH": self.push,
             "POP": self.pop,
-            "CALL": self.call
+            "CALL": self.call,
+            "JEQ": self.jeq,
+            "JMP": self.jmp,
+            "JNE": self.jne
         }
 
     def load(self):
@@ -74,20 +81,23 @@ class CPU:
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]            
         elif op == "CMP":
+            reg_a = self.reg[reg_a]
+            reg_b = self.reg[reg_b]
+
             if reg_a == reg_b:
-                setattr(self.fl['E'], 1)
+                self.fl['E'] = 1
             else:
-                setattr(self.fl['E'], 0)
+                self.fl['E'] = 0
 
             if reg_a < reg_b:
-                setattr(self.fl['L'], 1)
+                self.fl['L'] = 1
             else:
-                setattr(self.fl['L'], 0)
+                self.fl['L'] = 0
             
             if reg_a > reg_b:
-                setattr(self.fl['G'], 1)
+                self.fl['G'] = 1
             else:
-                setattr(self.fl['G'], 0)
+                self.fl['G'] = 0
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -177,3 +187,18 @@ class CPU:
         self.ram[self.reg[7]] = self.pc + 2
         # takes in register to move PC to
         self.pc = self.reg[op_a]
+
+    def jeq(self, op_a, _):
+        if self.fl['E'] == 1:
+            self.pc = self.reg[op_a]
+        else:
+            self.pc += 2
+
+    def jmp(self, op_a, _):
+        self.pc = self.reg[op_a]
+
+    def jne(self, op_a, _):
+        if self.fl['E'] == 0:
+            self.pc = self.reg[op_a]
+        else:
+            self.pc += 2
