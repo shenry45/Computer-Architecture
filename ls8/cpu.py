@@ -9,16 +9,31 @@ class CPU:
         """Construct a new CPU."""
         self.reg = [0] * 8
         self.ram = [0] * 256
-        self.ir = {
-            'PC': 00,
-            'IR': '',
-            'MAR': '',
-            'MDR': ''
-        }
+        self.pc = 00
         self.fl = {
             'L': 0,
             'G': 0,
             'E': 0
+        }
+        self.opcodes = {
+            0b10100000: "ADD",
+            0b01010000: "CALL",
+            0b10000010: "LDI",
+            0b00010001: "RET",
+            0b10100010: "MUL",
+            0b01000101: "PUSH",
+            0b01000110: "POP",
+            0b01000111: "PRN",
+            0b00000001: "HLT"
+        }
+        self.branchtable = {
+            "HLT": self.hlt,
+            "PRN": self.prn,
+            "LDI": self.ldi,
+            "RET": self.ret,
+            "PUSH": self.push,
+            "POP": self.pop,
+            "CALL": self.call
         }
 
     def load(self):
@@ -42,36 +57,22 @@ class CPU:
                         continue
                     line = line.split()
                     # add binary literal from binary string to program
-                    bin_lit = int(line[0], 2)
-                    program.append(bin_lit)
-
-            for instruction in program:
-                self.ram[address] = instruction
-                address += 1
+                    binary_lit = int(line[0], 2)
+                    # program.append(bin_lit)
+                    self.ram[address] = binary_lit
+                    address += 1
 
         except FileNotFoundError:
             print("%s not found" % (sys.argv[1]))
 
 
-
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == 0b10100000:
-            ''' ADD '''
-            reg_a_val = self.reg[reg_a]
-            reg_b_val = self.reg[reg_b]
-            self.reg[reg_a] = reg_a_val + reg_b_val
-            self.ir['PC'] += 3
-        elif op == "AND":
-            pass
-        elif op == 0b01010000:
-            ''' CALL '''
-            # pushes next command address stack
-            self.reg[7] -= 1
-            self.ram[self.reg[7]] = self.ir['PC'] + 2
-            # takes in register to move PC to
-            self.ir['PC'] = self.reg[reg_a]
+        if op == "ADD":
+            self.reg[reg_a] += self.reg[reg_b]
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]            
         elif op == "CMP":
             if reg_a == reg_b:
                 setattr(self.fl['E'], 1)
@@ -87,104 +88,6 @@ class CPU:
                 setattr(self.fl['G'], 1)
             else:
                 setattr(self.fl['G'], 0)
-        elif op == 'DEC':
-            setattr(self.reg[reg_a], reg_a - 1)
-        elif op == 'DIV':
-            pass
-        elif op == 0b00000001:
-            '''HLT'''
-            exit()
-        elif op == 'INC':
-            reg_val = self.reg
-            self.ram_write(reg_a, )
-        elif op == 'INT':
-            pass
-        elif op == 'IRET':
-            pass
-        elif op == 'JEQ':
-            pass
-        elif op == 'JGE':
-            pass
-        elif op == 'JGT':
-            pass
-        elif op == 'JLE':
-            pass
-        elif op == 'JLT':
-            pass
-        elif op == 'JMP':
-            pass
-        elif op == 'JNE':
-            pass
-        elif op == 'LD':
-            pass
-        elif op == 0b10000010:
-            '''LDI'''
-            self.reg[reg_a] = reg_b
-            self.ir['PC'] += 3
-        elif op == 'MOD':
-            pass
-        elif op == 0b10100010:
-            ''' MUL '''
-            reg_a_val = self.reg[reg_a]
-            reg_b_val = self.reg[reg_b]
-
-            multiply_val = reg_a_val * reg_b_val
-
-            self.ram_write(reg_a, multiply_val)
-
-            self.ir['PC'] += 3
-        elif op == 'NOP':
-            pass
-        elif op == 'NOT':
-            pass
-        elif op == 'OR':
-            pass
-        elif op == 0b01000110:
-            ''' POP '''
-            sp_val = self.ram[self.reg[7]]
-            self.reg[reg_a] = sp_val
-
-            self.reg[7] += 1
-            self.ir['PC'] += 2
-        elif op == 'PRA':
-            pass
-        elif op == 0b01000111:
-            '''PRN'''
-            print(self.reg[reg_a])
-            self.ir['PC'] += 2
-        elif op == 0b01000101:
-            ''' PUSH '''
-            # change SP
-            self.reg[7] -= 1
-            # copy value from register into memory
-            reg_val = self.reg[reg_a]
-
-            address = self.reg[7]
-            self.ram[address] = reg_val
-
-            self.ir['PC'] += 2     
-        elif op == 0b00010001:
-            ''' RET '''
-            # update PC
-            self.ir['PC'] = self.ram[self.reg[7]]
-            # reduce stack
-            self.reg[7] += 1
-
-        elif op == 'SHL':
-            pass
-            # setattr(self.reg[reg_a], reg_a << reg_b)
-        elif op == 'SHR':
-            pass
-            # setattr(self.reg[reg_a], reg_a >> reg_b)
-        elif op == 'ST':
-            pass
-            # setattr(self.reg[reg_b], reg_a)
-        elif op == 'SUB':
-            pass
-            # setattr(self.reg[reg_a], reg_a - reg_b)
-        elif op == 'XOR':
-            pass
-            # setattr(self.reg[reg_a], reg_a ^ reg_b)
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -208,21 +111,69 @@ class CPU:
 
     def ram_read(self, reg):
         return self.ram[reg]
-    def ram_write(self, reg, val):
-        self.reg[reg] = val
+    def ram_write(self, addr, val):
+        self.ram[addr] = val
 
     def run(self):
         """Run the CPU."""
         # init stack pointer at F4
         self.reg[7] = 0xF4
         # init program counter at 00
-        self.ir['PC'] = 0x00
+        self.pc = 0x00
 
-        # run commands until
-        while self.ram[self.ir['PC']] != 0:
-            command_addr = self.ir['PC']
-            reg_a_val = self.ram[command_addr + 1]
-            reg_b_val = self.ram[command_addr + 2]
-            command_val = self.ram[command_addr]
-            # run command
-            self.alu(command_val, reg_a_val, reg_b_val)
+        # run commands until init value found
+        while self.ram[self.pc] != 0:
+            IR = self.ram_read(self.pc)
+            op_a = self.ram_read(self.pc + 1)
+            op_b = self.ram_read(self.pc + 2)
+
+            num_operands = (IR >> 6)
+
+            sets_pc = ((IR >> 4) & 0b0001) == 1
+
+            is_alu_comm = ((IR >> 5) & 0b001) == 1
+
+            opcode = self.opcodes[IR]
+
+            if not sets_pc:
+                self.pc += 1 + num_operands
+
+            if is_alu_comm:
+                self.alu(opcode, op_a, op_b)
+            else:
+                self.branchtable[opcode](op_a, op_b)
+            
+    
+    def prn(self, op_a, _):
+        print(self.reg[op_a])
+
+    def hlt(self, _, __):
+        sys.exit(2)
+
+    def ldi(self, op_a, op_b):
+        self.reg[op_a] = op_b
+
+    def ret(self, _, __):
+        self.pc = self.ram[self.reg[7]]
+
+    def push(self, op_a, _):
+        # change SP
+        self.reg[7] -= 1
+        # copy value from register into memory
+        reg_val = self.reg[op_a]
+
+        address = self.reg[7]
+        self.ram[address] = reg_val
+
+    def pop(self, op_a, __):
+        sp_val = self.ram[self.reg[7]]
+        self.reg[op_a] = sp_val
+
+        self.reg[7] += 1
+
+    def call(self, op_a, _):
+        # pushes next command address stack
+        self.reg[7] -= 1
+        self.ram[self.reg[7]] = self.pc + 2
+        # takes in register to move PC to
+        self.pc = self.reg[op_a]
