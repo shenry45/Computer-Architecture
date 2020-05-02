@@ -17,18 +17,25 @@ class CPU:
         }
         self.opcodes = {
             0b10100000: "ADD",
+            0b10101000: "AND",
             0b01010000: "CALL",
-            0b10000010: "LDI",
-            0b00010001: "RET",
-            0b10100010: "MUL",
-            0b01000101: "PUSH",
-            0b01000110: "POP",
-            0b01000111: "PRN",
-            0b00000001: "HLT",
             0b10100111: "CMP",
+            0b00000001: "HLT",
             0b01010101: "JEQ",
             0b01010100: "JMP",
             0b01010110: "JNE"
+            0b10000010: "LDI",
+            0b10100100: "MOD",
+            0b10100010: "MUL",
+            0b01101001: "NOT"
+            0b10101010: "OR",
+            0b01000110: "POP",
+            0b01000111: "PRN",
+            0b01000101: "PUSH",
+            0b00010001: "RET",
+            0b10101100: "SHL",
+            0b10101101: "SHR",
+            0b10101011: "XOR"
         }
         self.branchtable = {
             "HLT": self.hlt,
@@ -78,8 +85,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        elif op == "MUL":
-            self.reg[reg_a] *= self.reg[reg_b]            
+        elif op == "AND":
+            self.reg[reg_a] = (self.reg[reg_a] & self.reg[reg_b])
         elif op == "CMP":
             reg_a = self.reg[reg_a]
             reg_b = self.reg[reg_b]
@@ -98,6 +105,24 @@ class CPU:
                 self.fl['G'] = 1
             else:
                 self.fl['G'] = 0
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "MOD":
+            remainder = self.reg[reg_a] % self.reg[reg_a]
+
+            if remainder == 0:
+                print('Error on MOD command, 0 division found')
+                sys.exit(2)
+        elif op == "NOT":
+            self.reg[reg_a] = ~(self.reg[reg_a])
+        elif op == "OR":
+            self.reg[reg_a] = (self.reg[reg_a] | self.reg[reg_b])
+        elif op == "SHL":
+            self.reg[reg_a] = (self.reg[reg_a] << self.reg[reg_b])
+        elif op == "SHR":
+            self.reg[reg_a] = (self.reg[reg_a] >> self.reg[reg_b])
+        elif op == "XOR":
+            self.reg[reg_a] = (self.reg[reg_a] ^ self.reg[reg_b])
         else:
             raise Exception("Unsupported ALU operation")
 
